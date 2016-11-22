@@ -2,26 +2,23 @@ package file
 
 import (
 	"github.com/bjjb/mmmgr/books"
+	"github.com/bjjb/mmmgr/movies"
+	"github.com/bjjb/mmmgr/tv"
 	"mime"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
+// A File just wraps a file on the local filesystem
 type File struct {
 	Path      string
 	MimeType  string
 	MediaType string
-	Error     error
 }
 
 // Constructs a new File
 func New(path string) *File {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return &File{Error: err}
-	}
-	return &File{absPath, MimeType(absPath), MediaType(absPath), nil}
+	return &File{path, MimeType(path), MediaType(path)}
 }
 
 // Returns true if the path is to an audio, video or book file.
@@ -31,58 +28,6 @@ func IsMedia(path string) bool {
 		return true
 	}
 	return false
-}
-
-// Holds data related to a video file
-type Video struct {
-	File
-	Duration string
-}
-
-// Holds data related to an audio file
-type Audio struct {
-	File
-	Duration string
-}
-
-// Holds data related to an eBook
-type Book struct {
-	File
-	Title  string
-	Author string
-	Date   string
-	Series string
-}
-
-// Holds data related to a Music file
-type Music struct {
-	Audio
-	Artist string
-	Album  string
-	Title  string
-	Disc   string
-	Number string
-	MBID   string
-}
-
-// Holds data related to a TV file
-type TV struct {
-	Video
-	Title  string
-	Show   string
-	Season string
-	Number string
-	Year   string
-	TVDBID string
-	TMDBID string
-}
-
-// Holds data related to a Movie file
-type Movie struct {
-	Video
-	Title  string
-	Year   string
-	TMDBID string
 }
 
 // MediaType takes a path and returns the type of media associated with it.
@@ -96,25 +41,14 @@ func IsVideo(path string) bool {
 	return strings.Split(MimeType(path), "/")[0] == "video"
 }
 
-// True if the given file path is a TV show
+// True if the given file path looks like a TV show
 func IsTV(path string) bool {
-	tvPatterns := []string{
-		`[sS]\d{1,2}[eE]\d{1,2}`,
-		`\d{1,2}[x.]\d{1,2}`,
-	}
-	baseName := filepath.Base(path)
-	//parentDir := filepath.Base(filepath.Dir(path))
-	for _, pattern := range tvPatterns {
-		if regexp.MustCompile(pattern).MatchString(baseName) {
-			return true
-		}
-	}
-	return false
+	return tv.GuessFromPath(path) != nil
 }
 
 // True if the given file path looks like a movie
 func IsMovie(path string) bool {
-	return false
+	return movies.GuessFromPath(path) != nil
 }
 
 // True if the given file path is an audio file
@@ -124,7 +58,7 @@ func IsAudio(path string) bool {
 
 // True if the given file path looks like an music file
 func IsMusic(path string) bool {
-	return false
+	return true
 }
 
 // True if the given file path is a book

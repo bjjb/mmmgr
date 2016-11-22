@@ -2,19 +2,32 @@ package file
 
 import "testing"
 
-func TestNew(t *testing.T) {
-	expected := &File{"foo.mp4", "video/mp4", "video", nil}
-	actual := New("foo.mp4")
-	if actual.MimeType != expected.MimeType {
-		t.Errorf("New(%q).MimeType is %q; expected %q", "foo.mp4", actual.MimeType, expected.MimeType)
+func TestIsMovie(t *testing.T) {
+	cases := []struct {
+		t string
+		r bool
+	}{
+		{"Rambo.avi", true},
+		{"Rambo.1991.avi", true},
 	}
-	if actual.MediaType != expected.MediaType {
-		t.Errorf("New(%q).MediaType is %q; expected %q", "foo.mp4", actual.MediaType, expected.MediaType)
+	for _, c := range cases {
+		if r := IsMovie(c.t); r != c.r {
+			t.Errorf("IsMovie(%q) => %v, expected %v", c.t, r, c.r)
+		}
 	}
-	if actual.Path != expected.Path {
-		t.Errorf("New(%q).Path is %q; expected %q", "foo.mp4", actual.Path, expected.Path)
+}
+
+func TestIsTV(t *testing.T) {
+	cases := []struct {
+		t string
+		r bool
+	}{
+		{"Mr.Robot.S01E11.BlahBlah.avi", true},
+		{"Rambo.1991.avi", false},
 	}
-	if actual.Error != expected.Error {
-		t.Errorf("New(%q).Error is %q; expected %q", "foo.mp4", actual.Error, expected.Error)
+	for _, c := range cases {
+		if r := IsTV(c.t); r != c.r {
+			t.Errorf("IsTV(%q) => %v, expected %v", c.t, r, c.r)
+		}
 	}
 }
