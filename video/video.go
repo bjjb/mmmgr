@@ -1,8 +1,12 @@
 package video
 
-import "github.com/bjjb/mmmgr/guessit"
+import (
+	"github.com/bjjb/mmmgr/guessit"
+	"github.com/bjjb/mmmgr/files"
+)
 
 type Video struct {
+	File			*files.File
 	Codec     string
 	Container string
 	Duration  string
@@ -24,4 +28,10 @@ func GuessFromPath(path string) *Video {
 		}
 	}
 	return nil
+}
+
+// Makes a new Video from a files.File.
+func New(path string) *Video {
+	r := new(Video)
+	return r
 }

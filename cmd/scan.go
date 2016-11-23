@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bjjb/mmmgr/file"
+	"github.com/bjjb/mmmgr/files"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
@@ -22,8 +22,9 @@ The snippet above will add each file to the mmmgr library.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, path := range args {
 			filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-				if err == nil && !info.IsDir() && file.IsMedia(path) {
-					fmt.Println(path)
+				file := files.New(path)
+				if err == nil && !info.IsDir() && file.MediaType != "" {
+					fmt.Printf("%q\n", file.Path)
 				}
 				return err
 			})

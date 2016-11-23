@@ -1,9 +1,13 @@
 package music
 
-import "github.com/bjjb/mmmgr/audio"
+import (
+	"github.com/bjjb/mmmgr/audio"
+	"github.com/bjjb/mmmgr/files"
+)
 
 // Holds data related to a Music file
 type Music struct {
+	File	 *files.File
 	Artist string
 	Album  string
 	Title  string
@@ -17,4 +21,10 @@ func GuessFromPath(path string) *Music {
 	return &Music{
 		Title: a.Title,
 	}
+}
+
+// Makes a new Music from a files.File.
+func New(path string) *Music {
+	r := new(Music)
+	return r
 }

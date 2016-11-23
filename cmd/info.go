@@ -2,13 +2,23 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/bjjb/mmmgr/file"
+	"log"
+	"os"
+	"text/template"
+	"encoding/json"
 	"github.com/spf13/cobra"
+	"github.com/bjjb/mmmgr/files"
+	"github.com/bjjb/mmmgr/audio"
+	"github.com/bjjb/mmmgr/books"
+	"github.com/bjjb/mmmgr/movies"
+	"github.com/bjjb/mmmgr/music"
+	"github.com/bjjb/mmmgr/tv"
+	"github.com/bjjb/mmmgr/video"
 )
 
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{
-	Use:   "info [files]",
+	Use:   "info [FILE...]",
 	Short: "Prints information about the given files",
 	Long: `Prints out information about the media files.
 For all media files, the following info is abailable:
@@ -62,13 +72,53 @@ Information is presented by default in prettified JSON. This can be controlled
 by passing the --format flag, allowing you to specify a Go-style template
 instead, in which the keys above can be used.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		output := makeOutputFunction()
 		for _, path := range args {
-			file := file.New(path)
-			fmt.Printf("%#v\n", file)
+			file := files.New(path)
+			switch file.MediaType {
+			case "tv":
+				output(tv.New(file.Path))
+			case "movie":
+				output(movies.New(file.Path))
+			case "video":
+				output(video.New(file.Path))
+			case "music":
+				output(music.New(file.Path))
+			case "audio":
+				output(audio.New(file.Path))
+			case "book":
+				output(books.New(file.Path))
+			default:
+				output(file)
+			}
 		}
 	},
 }
 
+var templ string
+
+func makeOutputFunction() func (interface{}) {
+	if templ != "" {
+		t := template.Must(template.New("info").Parse(templ))
+		return func(x interface{}) {
+			if err := t.Execute(os.Stdout, x); err != nil {
+				log.Panic(err)
+			}
+		}
+	}
+	return outputJSON
+}
+
+func outputJSON(x interface{}) {
+	json, err := json.MarshalIndent(x, "", "\t")
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Printf("%s\n", json)
+}
+
+
 func init() {
 	RootCmd.AddCommand(infoCmd)
+	infoCmd.Flags().StringVar(&templ, "template", "", "output template")
 }
