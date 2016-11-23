@@ -11,7 +11,7 @@ func initGuessitCommand() {
 		return
 	}
 	if isExecutable("docker") {
-		guessitCommand = "docker run toilal/guessit -j"
+		guessitCommand = "docker run --rm toilal/guessit -j"
 		return
 	}
 	log.Fatal(`Failed to find guessit or docker on the system.
