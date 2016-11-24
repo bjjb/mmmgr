@@ -18,7 +18,7 @@ import (
 
 // infoCmd represents the info command
 var infoCmd = &cobra.Command{
-	Use:   "info [FILE...]",
+	Use:   "info FILE",
 	Short: "Prints information about the given files",
 	Long: `Prints out information about the media files.
 For all media files, the following info is abailable:
@@ -73,6 +73,10 @@ by passing the --format flag, allowing you to specify a Go-style template
 instead, in which the keys above can be used.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		output := makeOutputFunction()
+		if len(args) == 0 {
+			fmt.Println("No files specified")
+			os.Exit(1)
+		}
 		for _, path := range args {
 			file := files.New(path)
 			switch file.MediaType {

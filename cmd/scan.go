@@ -10,7 +10,7 @@ import (
 
 // scanCmd represents the scan command
 var scanCmd = &cobra.Command{
-	Use:   "scan path",
+	Use:   "scan PATH",
 	Short: "Scan the given path for multimedia",
 	Long: `Scan the given path for multimedia files, printing out matches.
 For every media file encountered, it simply prints the absolute path. Useful
