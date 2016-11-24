@@ -1,11 +1,11 @@
-package guessit
+package guess
 
 import (
 	"log"
 	"os/exec"
 )
 
-func initGuessitCommand() {
+func initGuessit() {
 	if isExecutable("guessit") {
 		guessitCommand = "guessit -j"
 		return

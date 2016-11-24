@@ -2,7 +2,7 @@ package tv
 
 import (
 	"github.com/bjjb/mmmgr/files"
-	"github.com/bjjb/mmmgr/guessit"
+	"github.com/bjjb/mmmgr/guess"
 )
 
 // Holds data related to a TV file (generally one episode)
@@ -21,7 +21,7 @@ type TV struct {
 // failed, or if the type wasn't guessed as "tv".
 func GuessFromPath(path string) *TV {
 	f := files.New(path)
-	if g := guessit.Guessit(f.Path); g != nil && g.Type == "episode" {
+	if g := guess.FromPath(f.Path); g != nil && g.Type == "episode" {
 		return &TV{
 			File:    f,
 			Show:    g.Title,

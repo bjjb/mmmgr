@@ -1,7 +1,7 @@
 package movies
 
 import (
-	"github.com/bjjb/mmmgr/guessit"
+	"github.com/bjjb/mmmgr/guess"
 	"github.com/bjjb/mmmgr/files"
 )
 
@@ -18,7 +18,7 @@ type Movie struct {
 // failed, or if the type wasn't guessed as "tv".
 func GuessFromPath(path string) *Movie {
 	f := files.New(path)
-	if g := guessit.Guessit(f.Path); g != nil && g.Type == "movie" {
+	if g := guess.FromPath(f.Path); g != nil && g.Type == "movie" {
 		return &Movie{
 			File:	 f,
 			Title: g.Title,

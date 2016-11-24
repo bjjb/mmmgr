@@ -1,4 +1,4 @@
-package guessit
+package guess
 
 import (
 	"encoding/json"
@@ -54,18 +54,17 @@ type Guess struct {
 
 var guessitCommand string
 var cache = make(map[string]*Guess)
-var logger = log.New(ioutil.Discard, "guessit:", log.Lshortfile|log.Lmicroseconds)
+var logger = log.New(ioutil.Discard, "guess:", log.Lshortfile|log.Lmicroseconds)
 var debug = logger.Printf
 
 func init() {
 	if os.Getenv("DEBUG") != "" {
 		logger.SetOutput(os.Stdout)
 	}
-	initGuessitCommand()
+	initGuessit()
 }
 
-// Runs guessit -j on the given path, and returns a Guess
-func Guessit(path string) *Guess {
+func FromPath(path string) *Guess {
 	debug("guessing %q", path)
 
 	if guess, found := cache[path]; found {
