@@ -21,7 +21,7 @@ type TV struct {
 // failed, or if the type wasn't guessed as "tv".
 func GuessFromPath(path string) *TV {
 	f := files.New(path)
-	if g := guess.FromPath(f.Path); g != nil && g.Type == "episode" {
+	if g := guess.New(f.Path); g != nil && g.Type == "episode" {
 		return &TV{
 			File:    f,
 			Show:    g.Title,

@@ -2,11 +2,8 @@ package guess
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"github.com/bjjb/mmmgr/guessit"
 	"log"
-	"os"
-	"os/exec"
-	"strings"
 )
 
 type Guess struct {
@@ -52,44 +49,12 @@ type Guess struct {
 	Year             int      `json:"year"`
 }
 
-var guessitCommand string
-var cache = make(map[string]*Guess)
-var logger = log.New(ioutil.Discard, "guess:", log.Lshortfile|log.Lmicroseconds)
-var debug = logger.Printf
-
-func init() {
-	if os.Getenv("DEBUG") != "" {
-		logger.SetOutput(os.Stdout)
-	}
-	initGuessit()
-}
-
-func FromPath(path string) *Guess {
-	debug("guessing %q", path)
-
-	if guess, found := cache[path]; found {
-		debug("...found in cache.")
-		return guess
-	}
-
-	argv := strings.Split(guessitCommand, " ")
-	cmd := argv[0]
-	args := append(argv[1:], path)
-
-	debug("...running %q %v...", cmd, args)
-	out, err := exec.Command(cmd, args...).CombinedOutput()
+func New(path string) *Guess {
+	g := new(Guess)
+	data := guessit.Guessit(path)
+	err := json.Unmarshal(data, &g)
 	if err != nil {
-		log.Fatalf("error from guessit: %q", out)
+		log.Fatalf("error decoding guessit result: %q %v", err, data)
 	}
-
-	debug("...result: %s", out)
-	guess := new(Guess)
-	err = json.Unmarshal(out, &guess)
-	if err != nil {
-		log.Fatalf("error unmarshalling guessit result: %v", err)
-	}
-
-	cache[path] = guess
-	return guess
+	return g
 }
-

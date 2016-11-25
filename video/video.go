@@ -1,12 +1,12 @@
 package video
 
 import (
-	"github.com/bjjb/mmmgr/guess"
 	"github.com/bjjb/mmmgr/files"
+	"github.com/bjjb/mmmgr/guess"
 )
 
 type Video struct {
-	File			*files.File
+	File      *files.File
 	Codec     string
 	Container string
 	Duration  string
@@ -17,7 +17,7 @@ type Video struct {
 }
 
 func GuessFromPath(path string) *Video {
-	if g := guess.FromPath(path); g != nil {
+	if g := guess.New(path); g != nil {
 		return &Video{
 			Codec:     g.VideoCodec,
 			Container: g.Container,
