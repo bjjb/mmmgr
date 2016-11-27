@@ -1,41 +1,36 @@
 package tv
 
 import (
-	"github.com/bjjb/mmmgr/files"
 	"github.com/bjjb/mmmgr/guess"
+	"github.com/bjjb/mmmgr/video"
 )
 
 // Holds data related to a TV file (generally one episode)
 type TV struct {
-	Show    string `json:"show"`
-	Season  int    `json:"season"`
-	Episode int    `json:"episode"`
-	Title   string `json:"title"`
-	Year    int    `json:"year"`
-	TVDBID  string `json:"tvdb_id"`
-	TMDBID  string `json:"tmdb_id"`
-	*files.File
+	*video.Video
+	Season       int    `json:"season"`
+	Episode      int    `json:"episode"`
+	EpisodeTitle string `json:"episode_title"`
+	Year         int    `json:"year"`
+	Date         string `json:"date"`
+	TVDBID       string `json:"tvdb_id"`
+	TMDBID       string `json:"tmdb_id"`
 }
 
-// Guesses the name of a TV series from a path - will return nil if the guess
-// failed, or if the type wasn't guessed as "tv".
-func GuessFromPath(path string) *TV {
-	f := files.New(path)
-	if g := guess.New(f.Path); g != nil && g.Type == "episode" {
-		return &TV{
-			File:    f,
-			Show:    g.Title,
-			Season:  g.Season,
-			Episode: g.Episode,
-			Title:   g.EpisodeTitle,
-			Year:    g.Year,
-		}
-	}
-	return nil
-}
-
-// Makes a new TV from a files.File.
 func New(path string) *TV {
-	tv := GuessFromPath(path)
-	return tv
+	return &TV{
+		Video: video.New(path),
+	}
+}
+
+// Makes a TV from a Guess
+func NewFromGuess(g *guess.Guess) *TV {
+	return &TV{
+		Video:        video.NewFromGuess(g),
+		Episode:      g.Episode,
+		Season:       g.Season,
+		EpisodeTitle: g.EpisodeTitle,
+		Year:         g.Year,
+		Date:         g.Date,
+	}
 }

@@ -1,6 +1,8 @@
 package audio
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGuessFromPath(t *testing.T) {
 	cases := []struct{ in, title string }{

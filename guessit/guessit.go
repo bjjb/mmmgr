@@ -6,44 +6,52 @@ guessing video-file names.
 package guessit
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
 )
 
-func Guessit(path string) []byte {
+func Guessit(path string) ([]byte, error) {
 	return guessit(path)
 }
 
 var cache map[string][]byte
 var cmd []string
-var function func(string) []byte
+var function func(string) ([]byte, error)
 
 func init() {
 	cache = make(map[string][]byte)
 	switch {
 	case isCommand("guessit"):
-		function = func(path string) []byte {
+		function = func(path string) ([]byte, error) {
 			return execute("guessit -j", path)
 		}
 	case isCommand("docker"):
-		function = func(path string) []byte {
+		function = func(path string) ([]byte, error) {
 			return execute("docker run --rm toilal/guessit -j", path)
 		}
 	default:
-		log.Fatalf("Failed to initialize guessit.")
+		function = func(path string) ([]byte, error) {
+			return []byte(""), errors.New("guessit not initialized")
+		}
 	}
 }
 
 // Runs guessit (or guessit in a docker)
-func guessit(path string) []byte {
+func guessit(path string) ([]byte, error) {
 	// return immediately if the result was cached
 	if v, found := cache[path]; found {
-		return v
+		return v, nil
 	}
-	result := function(path)
-	cache[path] = result
-	return result
+	result, err := function(path)
+	if err != nil {
+		result = []byte(fmt.Sprintf(`{"error":%q})`, err))
+		return result, err
+	} else {
+		cache[path] = result
+		return result, nil
+	}
 }
 
 // Utility function to test whether a command exists on the system
@@ -55,13 +63,13 @@ func isCommand(cmd string) bool {
 // Utility function to execute a command and return the output. Splits the cmd
 // and uses the first one as the actual command to exec.Command, and the rest
 // (including the args) as arguments.
-func execute(argc string, argv ...string) []byte {
+func execute(argc string, argv ...string) ([]byte, error) {
 	args := append(strings.Split(argc, " "), argv...)
 	argc = args[0]
 	argv = args[1:]
 	out, err := exec.Command(argc, argv...).Output()
 	if err != nil {
-		log.Fatalf("error from guessit: %q", err)
+		return []byte("{}"), err
 	}
-	return out
+	return out, nil
 }

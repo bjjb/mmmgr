@@ -6,32 +6,37 @@ import (
 )
 
 type Video struct {
-	File      *files.File
-	Codec     string
-	Container string
-	Duration  string
-	Format    string
-	MimeType  string
-	Title     string
-	Type      string
+	*files.File
+	AudioChannels     string   `json:"audio_channels"`
+	Codec             string   `json:"codec"`
+	Container         string   `json:"container"`
+	Duration          string   `json:"duration"`
+	Format            string   `json:"format"`
+	Languages         []string `json:"languages"`
+	ScreenSize        string   `json:"screen_size"`
+	SubtitleLanguages []string `json:"subtitle_languages"`
+	Title             string   `json:"title"`
 }
 
-func GuessFromPath(path string) *Video {
-	if g := guess.New(path); g != nil {
-		return &Video{
-			Codec:     g.VideoCodec,
-			Container: g.Container,
-			MimeType:  g.MimeType,
-			Format:    g.Format,
-			Title:     g.Title,
-			Type:      g.Type,
-		}
-	}
-	return nil
-}
-
-// Makes a new Video from a files.File.
 func New(path string) *Video {
-	r := new(Video)
-	return r
+	v := &Video{
+		File:              files.New(path),
+		Languages:         make([]string, 5),
+		SubtitleLanguages: make([]string, 10),
+	}
+	return v
+}
+
+func NewFromGuess(g *guess.Guess) *Video {
+	v := New(g.Path)
+	v.MimeType = g.MimeType
+	v.Codec = g.VideoCodec
+	v.ScreenSize = g.ScreenSize
+	v.Format = g.Format
+	v.MediaType = g.Type
+	v.Container = g.Container
+	v.Languages = g.Languages[:]
+	v.SubtitleLanguages = g.SubtitleLanguages[:]
+	v.Title = g.Title
+	return v
 }

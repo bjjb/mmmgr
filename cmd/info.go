@@ -1,19 +1,19 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"text/template"
 	"encoding/json"
-	"github.com/spf13/cobra"
-	"github.com/bjjb/mmmgr/files"
+	"fmt"
 	"github.com/bjjb/mmmgr/audio"
 	"github.com/bjjb/mmmgr/books"
+	"github.com/bjjb/mmmgr/files"
 	"github.com/bjjb/mmmgr/movies"
 	"github.com/bjjb/mmmgr/music"
 	"github.com/bjjb/mmmgr/tv"
 	"github.com/bjjb/mmmgr/video"
+	"github.com/spf13/cobra"
+	"log"
+	"os"
+	"text/template"
 )
 
 // infoCmd represents the info command
@@ -101,7 +101,7 @@ instead, in which the keys above can be used.`,
 
 var templ string
 
-func makeOutputFunction() func (interface{}) {
+func makeOutputFunction() func(interface{}) {
 	if templ != "" {
 		t := template.Must(template.New("info").Parse(templ))
 		return func(x interface{}) {
@@ -120,7 +120,6 @@ func outputJSON(x interface{}) {
 	}
 	fmt.Printf("%s\n", json)
 }
-
 
 func init() {
 	RootCmd.AddCommand(infoCmd)
