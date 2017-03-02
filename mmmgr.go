@@ -16,7 +16,7 @@ var ui = &cobra.Command{
 	Long: `A command-line application and server to help you manage your
 multimedia files.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Usage()
+		fmt.Println(cmd.Usage())
 	},
 }
 
@@ -39,7 +39,9 @@ func init() {
 }
 
 func main() {
-	ui.Execute()
+	if err := ui.Execute(); err != nil {
+		fmt.Errorf("Error executing UI: %v", err)
+	}
 }
 
 func makeExternalCommand(name string) (*cobra.Command, error) {

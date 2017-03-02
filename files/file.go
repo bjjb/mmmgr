@@ -218,7 +218,9 @@ func Scan(path string) <-chan *File {
 		return nil
 	}
 	go func() {
-		filepath.Walk(path, walker)
+		if err := filepath.Walk(path, walker); err != nil {
+			log.Fatalf("Error walking filepath %q: %v", path, err)
+		}
 		close(out)
 	}()
 	return out
