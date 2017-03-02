@@ -1,48 +1,45 @@
 package files
 
 import (
-	"encoding/json"
-	"github.com/bjjb/mmmgr/assert"
-	"io/ioutil"
-	"os"
 	"testing"
 )
 
-func TestJSONUnmarshal(t *testing.T) {
-	f := new(File)
-	j := []byte(`{"path": "a", "mime_type": "b", "type": "c"}`)
-	if err := json.Unmarshal(j, f); err != nil {
-		t.Errorf("Couldn't unmarshal JSON: %s", err)
+func TestNew(t *testing.T) {
+	type info map[string]string
+	type result struct {
+		mediaType string
+		info      info
 	}
-	if f.Path != "a" {
-		t.Errorf(".Path: expected %q, got %q", "a", f.Path)
+	type test struct {
+		in  string
+		out *result
 	}
-	if f.MimeType != "b" {
-		t.Errorf(".MimeType: expected %q, got %q", "b", f.MimeType)
-	}
-	if f.MediaType != "c" {
-		t.Errorf(".MediaType: expected %q, got %q", "c", f.MediaType)
-	}
-}
 
-func TestScan(t *testing.T) {
-	dir, err := ioutil.TempDir("", "mmmgr-files-scan")
-	if err != nil {
-		t.Error(err)
+	cases := []test{
+		{"foo.mov", &result{"", info{}}},
+		{"foo.1999.mov", &result{"movie", info{"title": "foo", "year": "1999"}}},
+		{"ass.1999/foo.1999.mov", &result{"movie", info{"title": "foo", "year": "1999"}}},
+		{"ass.1999/foo.1999.HDtv.mov", &result{"movie", info{"title": "foo", "year": "1999"}}},
+		{"foo.S02E12.blah.webm", &result{"tv", info{"show": "foo", "season": "02", "episode": "12", "title": "blah"}}},
+		{"foo.1999.S02E12.blah.webm", &result{"tv", info{"show": "foo", "season": "02", "episode": "12", "title": "blah", "year": "1999"}}},
+		//{"Downloads/My.Cool.Show.S04E03.WEBRip.x264-FUM[ettv]/My.Cool.Show.S04E03.WEBRip.x264-FUM[ettv].mp4",
+		//	&result{"tv", info{"show": "My.Cool.Show", "title": "", "source": "WEBRip", "vcodec": "x264", "rgroup": "FUM[ettv]"}}},
 	}
-	defer os.RemoveAll(dir)
-	testCases := []struct{ files []string }{
-		{
-			[]string{"foo.mp3", "foo.mp4", "foo.xls", "foo.pdf"},
-		},
-	}
-	for _, test := range testCases {
-		assert.WriteTempFiles(t, dir, test.files)
-		files := Scan(dir)
-		for f := range files {
-			x := New(f.Path)
-			assert.Equal(t, x.Path, f.Path)
-			assert.Assert(t, "MediaType missing!", f.MediaType != "")
+
+	for _, c := range cases {
+		expected := c.out
+		f := New(c.in)
+
+		got := f.MediaType()
+		if got != expected.mediaType {
+			t.Errorf("New(%q).MediaType() == %q; got %q", c.in, expected.mediaType, got)
+		}
+
+		for k := range c.out.info {
+			got = f.MediaInfo()[k]
+			if got != expected.info[k] {
+				t.Errorf("New(%q).MediaInfo()[%q] == %q; got %q", c.in, k, expected.info[k], got)
+			}
 		}
 	}
 }
