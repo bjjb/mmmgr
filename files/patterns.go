@@ -1,25 +1,21 @@
 package files
 
 import (
+	"fmt"
+	"os"
 	"regexp"
 	"strings"
 )
 
 /*
-Patterns is the master map of media patterns.
+Replacements is the list of substitutions which can be inserted into patterns.
 */
-var Patterns = map[string][]string{
-	"tv": []string{
-		`%show%\W\(?%year%\)?\WS%season%E%episode%\W%title%`,
-		`%show%\WS%season%E%episode%\W%title%`,
-	},
-	"movie": []string{
-		`%title%\W\(?%year%\)?/%title%\W\(?%year%\)?`,
-		`%title%\W\(?%year%\)?`,
-	},
-	"music": []string{},
-	"book":  []string{},
-}
+var Replacements map[string]string
+
+/*
+Patterns is set of a lists of file matching patterns, per media type.
+*/
+var Patterns map[string][]string
 
 /*
 Types enumerates the media types of each basic type.
@@ -28,22 +24,6 @@ var Types = map[string][]string{
 	"video": []string{"tv", "movie"},
 	"audio": []string{"music"},
 	"book":  []string{"book"},
-}
-
-/*
-Replacements is a map of regular expression snippets which can be used to
-abbreviate or specify filename patterns.
-*/
-var Replacements = map[string]string{
-	"year":    `\d{4}`,
-	"title":   `[^/]+`,
-	"season":  `\d{2}`,
-	"part":    `\d+`,
-	"episode": `\d{2}`,
-	"date":    `(?:\d{4}-\d{2}-\d{2}|\d{2}\.\d{2}\.\d{4})`,
-	"show":    `[^/]+`,
-	"disc":    `\d{2}`,
-	"track":   `\d{2}`,
 }
 
 /*
@@ -104,11 +84,18 @@ var Regexps = map[string][]*regexp.Regexp{}
 Compiles Regexps as specified in Patterns and Replacements.
 */
 func init() {
+	Replacements = DefaultReplacements
+	Patterns = DefaultPatterns
 	for mediaType := range Patterns {
 		list := []*regexp.Regexp{}
 		for _, p := range Patterns[mediaType] {
 			s := expandPattern(p, Replacements)
-			list = append(list, regexp.MustCompile(s))
+			re, err := regexp.Compile(s)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error compiling regexp %q", s)
+			} else {
+				list = append(list, re)
+			}
 		}
 		Regexps[mediaType] = list
 	}
