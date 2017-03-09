@@ -1,0 +1,26 @@
+[
+  {
+    "In": { "Method": "POST", "URL": "https://api.thetvdb.com/login" },
+    "Out": {
+      "StatusCode": 200,
+      "Status": "200 OK",
+      "Body": "{\"token\": \"XXX\"}"
+    }
+  },
+  {
+    "In": { "URL": "https://api.thetvdb.com/languages" },
+    "Out": {
+      "StatusCode": 200,
+      "Status": "200 OK",
+      "Body": "{\"data\": []}"
+    }
+  },
+  {
+    "In": { "URL": "https://api.thetvdb.com/search/series\\?name=(?P<x>.+)" },
+    "Out": {
+      "StatusCode": 200,
+      "Status": "200 OK",
+      "Body": "{\"data\": [{\"name\":\"{{.series}}\"}]}"
+    }
+  }
+]

@@ -5,6 +5,7 @@ DefaultPatterns is the default master map of media patterns.
 */
 var DefaultPatterns = map[string][]string{
 	"tv": []string{
+		`%show%\.S%season%E%episode%(?:\.%title%)?\.%source%\.%vcodec%-%rgroup%`,
 		`%show%\W\(?%year%\)?\WS%season%E%episode%\W%title%`,
 		`%show%\WS%season%E%episode%\W%title%`,
 	},
@@ -34,4 +35,7 @@ var DefaultReplacements = map[string]string{
 	"title":   `[^/]+`,
 	"track":   `\d{2}`,
 	"year":    `\d{4}`,
+	"rgroup":  `[^ ./]+`,
+	"vcodec":  `x264`,
+	"source":  `WEBRip`,
 }

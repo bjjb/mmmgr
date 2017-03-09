@@ -89,7 +89,7 @@ func init() {
 	for mediaType := range Patterns {
 		list := []*regexp.Regexp{}
 		for _, p := range Patterns[mediaType] {
-			s := expandPattern(p, Replacements)
+			s := "(?i:" + expandPattern(p, Replacements) + ")"
 			re, err := regexp.Compile(s)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error compiling regexp %q", s)

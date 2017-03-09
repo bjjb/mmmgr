@@ -1,9 +1,7 @@
 /*
 Package files contains structures and functions for dealing with files on the
 local file system, in terms of mmmgr, such as determining the mime-type and
-the media type, and extracting media information from file names. For more
-detailed information, look at guess, or the tv, movies, books or music
-packages.
+the media type, and extracting media information from file names.
 */
 package files
 
@@ -20,7 +18,7 @@ A File contains information about a file's absolute path, media types, and
 information gleaned from the path.
 */
 type File struct {
-	path                                    string `json:"path"`
+	path                                    string
 	absPath, mimeType, basicType, mediaType string
 	mediaInfo                               map[string]string
 	fileInfo                                os.FileInfo
