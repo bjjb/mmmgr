@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -18,7 +19,7 @@ func init() {
 		"imdbId", "", "search by IMDB ID")
 	SearchCommand.PersistentFlags().String(
 		"zap2itId", "", "search by Zap2It ID")
-	Command.AddCommand(LanguagesCommand, SearchCommand)
+	Command.AddCommand(LanguagesCommand, SearchCommand, SeriesCommand)
 }
 
 /*
@@ -94,6 +95,32 @@ var SearchCommand = &cobra.Command{
 		}
 
 		result, err := DefaultClient.SearchSeries(values)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		outputJSON(result)
+	},
+}
+
+/*
+SeriesCommand searches for a series.
+*/
+var SeriesCommand = &cobra.Command{
+	Use:   "series ID",
+	Short: "get series information",
+	Long:  "Gets detailed information for the series with the given TVDB ID",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			usage(cmd)
+			return
+		}
+		id, err := strconv.Atoi(args[0])
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		result, err := DefaultClient.GetSeries(id)
 		if err != nil {
 			log.Fatal(err)
 			return

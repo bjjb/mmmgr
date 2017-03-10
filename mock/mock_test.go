@@ -78,7 +78,7 @@ func Example_readingJSON() {
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
 			// the response body was defined in the first definition's Out template
 			fmt.Printf("GET => %s\n", string(body))
-			resp.Body.Close() // this is a no-op, but it's good practice...
+			_ = resp.Body.Close()
 		} else {
 			log.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func Example_readingJSON() {
 		if body, err := ioutil.ReadAll(resp.Body); err == nil {
 			// the response body is actually extracted from the request
 			fmt.Printf("POST => %s\n", string(body))
-			resp.Body.Close() // ... good practice
+			_ = resp.Body.Close()
 		} else {
 			log.Fatal(err)
 		}

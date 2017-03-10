@@ -14,7 +14,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	mocks, err := mock.ReadJSON(file)
 	if err != nil {
 		log.Fatal(err)

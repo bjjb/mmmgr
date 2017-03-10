@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -53,7 +54,11 @@ http.Client to use a MockSet instead of its default Transport.
 */
 func (ms Set) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.Body != nil {
-		defer req.Body.Close()
+		defer func() {
+			if err := req.Body.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
 	}
 	for _, mock := range ms {
 		if mock.RequestMatcher == nil {
@@ -113,8 +118,8 @@ func (e ErrUnmocked) Error() string {
 }
 
 /*
-Read reads a Set (in JSON format) from the io.Reader r and returns it (or the
-resultant error). The JSON should be an array of objects, whose keys
+ReadJSON reads a Set (in JSON format) from the io.Reader r and returns it (or
+the resultant error). The JSON should be an array of objects, whose keys
 correspond to a Mock (where In is a Request, Out is a Response, and Err is an
 error). The In strings will be compiled to regular expressions, and the Out
 strings (and Err string) will be treated as Go templates. Names submatches in

@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/bjjb/mmmgr/config"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -107,7 +110,7 @@ func (c *Client) doTokenRequest(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("login failed: %s", resp.Status)
 	}
@@ -136,6 +139,40 @@ func (c *Client) authorize() error {
 }
 
 /*
+Get authorizes the client (if needed), GETS from the URL, and returns the
+body, or an error.
+*/
+func (c *Client) Get(url string) (io.Reader, error) {
+	if err := c.authorize(); err != nil {
+		return nil, err
+	}
+	url = fmt.Sprintf("%s/%s", Endpoint, url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", Version)
+	req.Header.Add("Authorization", "Bearer "+c.token)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get %s not 200: [%s] (%s)", url, string(body))
+	}
+	return bytes.NewBuffer(body), nil
+}
+
+/*
 A Language encapsulates a language supported by The TVDB.
 */
 type Language struct {
@@ -149,25 +186,14 @@ type Language struct {
 Languages gets a list of the *Languages supported by TheTVDB.
 */
 func (c *Client) Languages() ([]Language, error) {
-	if err := c.authorize(); err != nil {
-		return nil, err
-	}
-	url := Endpoint + "/languages"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	r, err := c.Get("languages")
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Accept", Version)
-	req.Header.Add("Authorization", "Bearer "+c.token)
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 	result := new(struct {
 		Data []Language `json:"data"`
 	})
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -213,25 +239,14 @@ func (c *Client) SearchSeriesByZap2itID(id string) ([]SeriesSearchResult, error)
 SearchSeries queries The TVDB for series matching the given url.Values.
 */
 func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) {
-	if err := c.authorize(); err != nil {
-		return nil, err
-	}
-	url := Endpoint + "/search/series?" + values.Encode()
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	r, err := c.Get("search/series?" + values.Encode())
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Accept", Version)
-	req.Header.Add("Authorization", "Bearer "+c.token)
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 	result := new(struct {
 		Data []SeriesSearchResult `json:"data"`
 	})
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
 		return nil, err
 	}
 	return result.Data, nil
@@ -241,30 +256,74 @@ func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) 
 SearchSeriesParams gets a list of the params applicable for SearchSeries.
 */
 func (c *Client) SearchSeriesParams() ([]string, error) {
-	if err := c.authorize(); err != nil {
-		return nil, err
-	}
-	url := Endpoint + "/search/series/params"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	r, err := c.Get("search/series/params")
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Accept", Version)
-	req.Header.Add("Authorization", "Bearer "+c.token)
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 	result := new(struct {
 		Data struct {
 			Params []string `json:"params"`
 		} `json:"data"`
 	})
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
 		return nil, err
 	}
 	return result.Data.Params, nil
+}
+
+/*
+A Series contains detailed information from The TVDB about a particular
+series.
+*/
+type Series struct {
+	ID              int      `json:"id"`
+	SeriesName      string   `json:"seriesName"`
+	Aliases         []string `json:"aliases"`
+	Banner          string   `json:"banner"`
+	SeriesID        string   `json:"seriesId"`
+	Status          string   `json:"status"`
+	FirstAired      string   `json:"firstAired"`
+	Network         string   `json:"network"`
+	NetworkID       string   `json:"networkId"`
+	Runtime         string   `json:"runtime"`
+	Genre           []string `json:"genre"`
+	Overview        string   `json:"overview"`
+	LastUpdated     int      `json:"lastUpdated"`
+	AirsDayOfWeek   string   `json:"airsDayOfWeek"`
+	AirsTime        string   `json:"airsTime"`
+	Rating          string   `json:"rating"`
+	IMDBID          string   `json:"imdbId"`
+	Zap2ItID        string   `json:"zap2itId"`
+	Added           string   `json:"added"`
+	SiteRating      float64  `json:"siteRating"`
+	SiteRatingCount int      `json:"siteRatingCount"`
+	*Client
+}
+
+/*
+GetSeries gets specific information about a particular series by the id.
+*/
+func (c *Client) GetSeries(id int) (*Series, error) {
+	r, err := c.Get(fmt.Sprintf("series/%d", id))
+	if err != nil {
+		return nil, err
+	}
+	result := new(struct {
+		Data   *Series `json:"data"`
+		Errors *struct {
+			InvalidFilters     []string `json:"invalidFilters"`
+			InvalidLanguage    string   `json:"invalidLanguage"`
+			InvalidQueryParams []string `json:"invalidQueryParams"`
+		} `json:"errors"`
+	})
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
+		return nil, err
+	}
+	if result.Data == nil {
+		return nil, fmt.Errorf("GetSeries errors: %q", result.Errors)
+	}
+	result.Data.Client = c
+	return result.Data, nil
 }
 
 func init() {
