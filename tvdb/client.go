@@ -85,7 +85,7 @@ refreshToken updates the token of *Client c. It must already have a token, and
 its token must be valid.
 */
 func (c *Client) refreshToken() error {
-	values := url.Values{"token": {c.token}}
+	values := &url.Values{"token": {c.token}}
 	url := Endpoint + "/refresh_token?" + values.Encode()
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -191,14 +191,14 @@ type SeriesSearchResult struct {
 SearchSeriesByName queries The TVDB for series matching the given name.
 */
 func (c *Client) SearchSeriesByName(name string) ([]SeriesSearchResult, error) {
-	return c.SearchSeries(url.Values{"name": {name}})
+	return c.SearchSeries(&url.Values{"name": {name}})
 }
 
 /*
 SearchSeriesByImdbID queries The TVDB for series matching the given IMDB ID.
 */
 func (c *Client) SearchSeriesByImdbID(id string) ([]SeriesSearchResult, error) {
-	return c.SearchSeries(url.Values{"imdbId": {id}})
+	return c.SearchSeries(&url.Values{"imdbId": {id}})
 }
 
 /*
@@ -206,13 +206,13 @@ SearchSeriesByZap2itID queries The TVDB for series matching the given Zap2It
 ID.
 */
 func (c *Client) SearchSeriesByZap2itID(id string) ([]SeriesSearchResult, error) {
-	return c.SearchSeries(url.Values{"zap2itId": {id}})
+	return c.SearchSeries(&url.Values{"zap2itId": {id}})
 }
 
 /*
 SearchSeries queries The TVDB for series matching the given url.Values.
 */
-func (c *Client) SearchSeries(values url.Values) ([]SeriesSearchResult, error) {
+func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) {
 	if err := c.authorize(); err != nil {
 		return nil, err
 	}
@@ -235,6 +235,36 @@ func (c *Client) SearchSeries(values url.Values) ([]SeriesSearchResult, error) {
 		return nil, err
 	}
 	return result.Data, nil
+}
+
+/*
+SearchSeriesParams gets a list of the params applicable for SearchSeries.
+*/
+func (c *Client) SearchSeriesParams() ([]string, error) {
+	if err := c.authorize(); err != nil {
+		return nil, err
+	}
+	url := Endpoint + "/search/series/params"
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", Version)
+	req.Header.Add("Authorization", "Bearer "+c.token)
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	result := new(struct {
+		Data struct {
+			Params []string `json:"params"`
+		} `json:"data"`
+	})
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Data.Params, nil
 }
 
 func init() {
