@@ -167,7 +167,7 @@ func (c *Client) Get(url string) (io.Reader, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get %s not 200: [%s] (%s)", url, string(body))
+		return nil, fmt.Errorf("get %s not 200: [%s] (%s)", url, resp.Status, string(body))
 	}
 	return bytes.NewBuffer(body), nil
 }
@@ -192,4 +192,76 @@ func (c *Client) Languages() ([]Language, error) {
 func init() {
 	auth := config.TVDB
 	DefaultClient = NewClient(auth["apikey"], auth["username"], auth["userkey"])
+}
+
+/*
+A SeriesSearchResult is returned (in slices) by the SearchSeries* methods.
+*/
+type SeriesSearchResult struct {
+	Aliases    []string `json:"aliases"`
+	Banner     string   `json:"banner"`
+	FirstAired string   `json:"firstAired"`
+	ID         int      `json:"id"`
+	Network    string   `json:"network"`
+	Overview   string   `json:"overview"`
+	Name       string   `json:"seriesName"`
+	Status     string   `json:"status"`
+}
+
+/*
+SearchSeriesByName queries The TVDB for series matching the given name.
+*/
+func (c *Client) SearchSeriesByName(name string) ([]SeriesSearchResult, error) {
+	return c.SearchSeries(&url.Values{"name": {name}})
+}
+
+/*
+SearchSeriesByImdbID queries The TVDB for series matching the given IMDB ID.
+*/
+func (c *Client) SearchSeriesByImdbID(id string) ([]SeriesSearchResult, error) {
+	return c.SearchSeries(&url.Values{"imdbId": {id}})
+}
+
+/*
+SearchSeriesByZap2itID queries The TVDB for series matching the given Zap2It
+ID.
+*/
+func (c *Client) SearchSeriesByZap2itID(id string) ([]SeriesSearchResult, error) {
+	return c.SearchSeries(&url.Values{"zap2itId": {id}})
+}
+
+/*
+SearchSeries queries The TVDB for series matching the given url.Values.
+*/
+func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) {
+	r, err := c.Get("search/series?" + values.Encode())
+	if err != nil {
+		return nil, err
+	}
+	result := new(struct {
+		Data []SeriesSearchResult `json:"data"`
+	})
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Data, nil
+}
+
+/*
+SearchSeriesParams gets a list of the params applicable for SearchSeries.
+*/
+func (c *Client) SearchSeriesParams() ([]string, error) {
+	r, err := c.Get("search/series/params")
+	if err != nil {
+		return nil, err
+	}
+	result := new(struct {
+		Data struct {
+			Params []string `json:"params"`
+		} `json:"data"`
+	})
+	if err := json.NewDecoder(r).Decode(&result); err != nil {
+		return nil, err
+	}
+	return result.Data.Params, nil
 }

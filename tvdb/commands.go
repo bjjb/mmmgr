@@ -10,22 +10,29 @@ import (
 	"strings"
 )
 
+/*
+Command is a cobraCommand that can be added to the RootCommand.
+*/
+var Command *cobra.Command
+
 func init() {
-	SearchCommand.PersistentFlags().BoolP(
+	searchCommand.PersistentFlags().BoolP(
 		"params", "P", false, "list valid search params")
-	SearchCommand.PersistentFlags().StringP(
+	searchCommand.PersistentFlags().StringP(
 		"name", "n", "", "search by name (default no flags given)")
-	SearchCommand.PersistentFlags().String(
+	searchCommand.PersistentFlags().String(
 		"imdbId", "", "search by IMDB ID")
-	SearchCommand.PersistentFlags().String(
+	searchCommand.PersistentFlags().String(
 		"zap2itId", "", "search by Zap2It ID")
-	Command.AddCommand(LanguagesCommand, SearchCommand, SeriesCommand)
+	command.AddCommand(languagesCommand, searchCommand, seriesCommand)
+
+	Command = command
 }
 
 /*
-Command is a cobra.Command which is to be added to the root command.
+command is a cobra.Command which is to be added to the root command.
 */
-var Command = &cobra.Command{
+var command = &cobra.Command{
 	Use:   "tvdb",
 	Short: "interact with the TVDB",
 	Long: `
@@ -39,9 +46,9 @@ A basic client for working with The TVDB (https://thetvdb.com).
 }
 
 /*
-LanguagesCommand GETs /languages.
+languagesCommand GETs /languages.
 */
-var LanguagesCommand = &cobra.Command{
+var languagesCommand = &cobra.Command{
 	Use:   "languages",
 	Short: "list supported languages",
 	Long:  "list all languages supported by The TVDB",
@@ -55,9 +62,9 @@ var LanguagesCommand = &cobra.Command{
 }
 
 /*
-SearchCommand searches for a series.
+searchCommand searches for a series.
 */
-var SearchCommand = &cobra.Command{
+var searchCommand = &cobra.Command{
 	Use:   "search",
 	Short: "search for things",
 	Long:  "search for series on The TVDB",
@@ -104,9 +111,9 @@ var SearchCommand = &cobra.Command{
 }
 
 /*
-SeriesCommand searches for a series.
+seriesCommand searches for a series.
 */
-var SeriesCommand = &cobra.Command{
+var seriesCommand = &cobra.Command{
 	Use:   "series ID",
 	Short: "get series information",
 	Long:  "Gets detailed information for the series with the given TVDB ID",
