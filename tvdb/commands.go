@@ -15,6 +15,11 @@ Command is a cobraCommand that can be added to the RootCommand.
 */
 var Command *cobra.Command
 
+/*
+JSONIndentation specifies how to indent JSON in command output.
+*/
+var JSONIndentation = "  "
+
 func init() {
 	searchCommand.PersistentFlags().BoolP(
 		"params", "P", false, "list valid search params")
@@ -141,7 +146,7 @@ outputJSON simply encodes the data to JSON and prints it to STDOUT.
 */
 func outputJSON(data interface{}) {
 	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "\t")
+	encoder.SetIndent("", JSONIndentation)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(data); err != nil {
 		log.Fatal(err)

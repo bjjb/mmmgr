@@ -31,6 +31,7 @@ type Series struct {
 	Added           string   `json:"added"`
 	SiteRating      float64  `json:"siteRating"`
 	SiteRatingCount int      `json:"siteRatingCount"`
+	Episodes        []*Episode
 	*Client
 }
 

@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -27,13 +29,23 @@ var Version = "application/vnd.thetvdb.v2"
 TokenHoursToLive is the number of hours for which a JWT token is expected to
 remain valid.
 */
-var TokenHoursToLive = 24.0
+var TokenHoursToLive = 4.0
 
 /*
 DefaultClient is a convenient Client, configured (in init()) using user's
 configuration values, which is used in the Command and in tests.
 */
 var DefaultClient *Client
+
+/*
+TokenFile is used to store the Client's login token
+*/
+var TokenFile string
+
+/*
+Debug is used for logging.
+*/
+var Debug = func(fmt string, rest ...interface{}) {}
 
 /*
 httpClient is the underlying HTTP Client for sending requests to The TVDB.
@@ -106,13 +118,18 @@ loggedInAt, or return the appropriate error.
 */
 func (c *Client) doTokenRequest(req *http.Request) error {
 	now := time.Now()
+	Debug("doTokenRequest(%v)", req)
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("login failed: %s", resp.Status)
+		return fmt.Errorf(
+			"login failed: %d [%s]",
+			resp.StatusCode,
+			resp.Status,
+		)
 	}
 	result := make(map[string]string)
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
@@ -120,6 +137,7 @@ func (c *Client) doTokenRequest(req *http.Request) error {
 	}
 	c.token = result["token"]
 	c.loggedInAt = now
+	_ = c.saveToken(TokenFile)
 	return nil
 }
 
@@ -129,11 +147,47 @@ valid; otherwise it refreshes a token which is about to expire, or tries to
 log in if the token is expired or blank.
 */
 func (c *Client) authorize() error {
+	if err := c.loadToken(TokenFile); err != nil {
+		log.Fatal(err)
+	}
 	if c.token == "" {
 		return c.login()
 	}
-	if time.Now().Sub(c.loggedInAt).Hours() >= TokenHoursToLive {
+	if time.Now().UTC().Sub(c.loggedInAt.UTC()).Hours() >= TokenHoursToLive {
 		return c.refreshToken()
+	}
+	return nil
+}
+
+/*
+Loads the user's token, if the file exists.
+*/
+func (c *Client) loadToken(file string) error {
+	if file == "" {
+		return nil
+	}
+	info, err := os.Stat(file)
+	if err != nil {
+		return err
+	}
+	c.loggedInAt = info.ModTime()
+	token, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	c.token = strings.TrimSpace(string(token))
+	return nil
+}
+
+/*
+Saves the client's token, if the file exists.
+*/
+func (c *Client) saveToken(file string) error {
+	if file == "" {
+		return nil
+	}
+	if err := ioutil.WriteFile(file, []byte(c.token), 0644); err != nil {
+		return err
 	}
 	return nil
 }
@@ -167,7 +221,7 @@ func (c *Client) Get(url string) (io.Reader, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get %s not 200: [%s] (%s)", url, resp.Status, string(body))
+		return nil, fmt.Errorf("GET %s: %d [%s]", url, resp.StatusCode, resp.Status)
 	}
 	return bytes.NewBuffer(body), nil
 }
@@ -190,8 +244,12 @@ func (c *Client) Languages() ([]Language, error) {
 }
 
 func init() {
-	auth := config.TVDB
-	DefaultClient = NewClient(auth["apikey"], auth["username"], auth["userkey"])
+	cfg := config.TVDB
+	DefaultClient = NewClient(cfg["apikey"], cfg["username"], cfg["userkey"])
+	TokenFile = cfg["tokenfile"]
+	if cfg["debug"] == "true" {
+		Debug = log.Printf
+	}
 }
 
 /*
