@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/bjjb/mmmgr/config"
+	"github.com/bjjb/mmmgr/cfg"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
 )
 
 /*
@@ -35,7 +34,7 @@ var TokenHoursToLive = 4.0
 DefaultClient is a convenient Client, configured (in init()) using user's
 configuration values, which is used in the Command and in tests.
 */
-var DefaultClient *Client
+var DefaultClient = new(Client)
 
 /*
 TokenFile is used to store the Client's login token
@@ -57,19 +56,10 @@ var httpClient = http.DefaultClient
 A Client exposes methods talk to TheTVDB JSON API securely.
 */
 type Client struct {
-	apikey, username, userkey, token string
-	loggedInAt                       time.Time
-}
-
-/*
-NewClient gets a new *Client which can log in to TheTVDB as needed.
-*/
-func NewClient(apikey, username, userkey string) *Client {
-	c := new(Client)
-	c.apikey = apikey
-	c.username = username
-	c.userkey = userkey
-	return c
+	ApiKey           string `json:"apikey"`
+	UserName         string `json:"username"`
+	UserKey          string `json:"userkey"`
+	token, tokenFile string
 }
 
 /*
@@ -78,9 +68,9 @@ supplied to NewClient. You probably won't need to call this yourself.
 */
 func (c *Client) login() error {
 	body := map[string]string{
-		"apikey":   c.apikey,
-		"username": c.username,
-		"userkey":  c.userkey,
+		"apikey":   c.ApiKey,
+		"username": c.UserName,
+		"userkey":  c.UserKey,
 	}
 	buffer := new(bytes.Buffer)
 	if err := json.NewEncoder(buffer).Encode(body); err != nil {
@@ -117,7 +107,6 @@ request, parse the response, and either set the *Client's token and
 loggedInAt, or return the appropriate error.
 */
 func (c *Client) doTokenRequest(req *http.Request) error {
-	now := time.Now()
 	Debug("doTokenRequest(%v)", req)
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -136,7 +125,6 @@ func (c *Client) doTokenRequest(req *http.Request) error {
 		return err
 	}
 	c.token = result["token"]
-	c.loggedInAt = now
 	_ = c.saveToken(TokenFile)
 	return nil
 }
@@ -148,13 +136,15 @@ log in if the token is expired or blank.
 */
 func (c *Client) authorize() error {
 	if err := c.loadToken(TokenFile); err != nil {
-		log.Fatal(err)
+		switch err.(type) {
+		case *os.PathError:
+			c.token = ""
+		default:
+			log.Fatalf("%T: %[1]v", err)
+		}
 	}
 	if c.token == "" {
 		return c.login()
-	}
-	if time.Now().UTC().Sub(c.loggedInAt.UTC()).Hours() >= TokenHoursToLive {
-		return c.refreshToken()
 	}
 	return nil
 }
@@ -166,11 +156,6 @@ func (c *Client) loadToken(file string) error {
 	if file == "" {
 		return nil
 	}
-	info, err := os.Stat(file)
-	if err != nil {
-		return err
-	}
-	c.loggedInAt = info.ModTime()
 	token, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
@@ -244,11 +229,8 @@ func (c *Client) Languages() ([]Language, error) {
 }
 
 func init() {
-	cfg := config.TVDB
-	DefaultClient = NewClient(cfg["apikey"], cfg["username"], cfg["userkey"])
-	TokenFile = cfg["tokenfile"]
-	if cfg["debug"] == "true" {
-		Debug = log.Printf
+	if err := cfg.UnmarshalKey("tvdb", DefaultClient); err != nil {
+		log.Fatal(err)
 	}
 }
 
