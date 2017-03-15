@@ -1,20 +1,20 @@
 /*
-Package config provides tools for configuring mmmgr.
+Package cfg provides tools for configuring mmmgr.
 */
 package cfg
 
 import (
-	"github.com/spf13/viper"
 	"log"
 	"path"
+
+	"github.com/spf13/viper"
 )
 
-// A cfg contains configuration variables and methods
 type cfg struct {
 	*viper.Viper
 }
 
-// The Cfg is the underlying cfg, set up in init()
+// Cfg is the underlying cfg, set up in init()
 var Cfg *cfg
 
 func init() {
@@ -29,7 +29,7 @@ func init() {
 	Cfg = c
 }
 
-// UnmarshalKey unmarshals the config variable at k into the object i
+// UnmarshalKey decodes cfg's variable at k into the object i
 func UnmarshalKey(k string, i interface{}) error {
 	return Cfg.UnmarshalKey(k, i)
 }

@@ -2,8 +2,9 @@ package tmdb
 
 import (
 	"fmt"
-	"github.com/bjjb/mmmgr/cfg"
 	"testing"
+
+	"github.com/bjjb/mmmgr/cfg"
 )
 
 func init() {
@@ -17,7 +18,7 @@ func (t *TMDB) PostToken() {
 }
 
 type Client struct {
-	ApiKey string `json:"apikey"`
+	APIKey string `json:"apikey"`
 }
 
 func TestClient(t *testing.T) {

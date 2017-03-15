@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/bjjb/mmmgr/cfg"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/bjjb/mmmgr/cfg"
 )
 
 /*
@@ -56,7 +57,7 @@ var httpClient = http.DefaultClient
 A Client exposes methods talk to TheTVDB JSON API securely.
 */
 type Client struct {
-	ApiKey           string `json:"apikey"`
+	APIKey           string `json:"apikey"`
 	UserName         string `json:"username"`
 	UserKey          string `json:"userkey"`
 	token, tokenFile string
@@ -68,7 +69,7 @@ supplied to NewClient. You probably won't need to call this yourself.
 */
 func (c *Client) login() error {
 	body := map[string]string{
-		"apikey":   c.ApiKey,
+		"apikey":   c.APIKey,
 		"username": c.UserName,
 		"userkey":  c.UserKey,
 	}
@@ -149,9 +150,6 @@ func (c *Client) authorize() error {
 	return nil
 }
 
-/*
-Loads the user's token, if the file exists.
-*/
 func (c *Client) loadToken(file string) error {
 	if file == "" {
 		return nil
@@ -164,9 +162,6 @@ func (c *Client) loadToken(file string) error {
 	return nil
 }
 
-/*
-Saves the client's token, if the file exists.
-*/
 func (c *Client) saveToken(file string) error {
 	if file == "" {
 		return nil

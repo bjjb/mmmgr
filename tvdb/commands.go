@@ -2,23 +2,17 @@ package tvdb
 
 import (
 	"encoding/json"
-	"github.com/spf13/cobra"
 	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/bjjb/mmmgr/cmd"
+	"github.com/spf13/cobra"
 )
 
-/*
-Command is a cobraCommand that can be added to the RootCommand.
-*/
-var Command *cobra.Command
-
-/*
-JSONIndentation specifies how to indent JSON in command output.
-*/
-var JSONIndentation = "  "
+var jsonIndentation = "  "
 
 func init() {
 	searchCommand.PersistentFlags().BoolP(
@@ -29,15 +23,15 @@ func init() {
 		"imdbId", "", "search by IMDB ID")
 	searchCommand.PersistentFlags().String(
 		"zap2itId", "", "search by Zap2It ID")
-	command.AddCommand(languagesCommand, searchCommand, seriesCommand)
+	rootCommand.AddCommand(languagesCommand, searchCommand, seriesCommand)
 
-	Command = command
+	cmd.AddCommand(rootCommand)
 }
 
 /*
 command is a cobra.Command which is to be added to the root command.
 */
-var command = &cobra.Command{
+var rootCommand = &cobra.Command{
 	Use:   "tvdb",
 	Short: "interact with the TVDB",
 	Long: `
@@ -146,7 +140,7 @@ outputJSON simply encodes the data to JSON and prints it to STDOUT.
 */
 func outputJSON(data interface{}) {
 	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", JSONIndentation)
+	encoder.SetIndent("", jsonIndentation)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(data); err != nil {
 		log.Fatal(err)

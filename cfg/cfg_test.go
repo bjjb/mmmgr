@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"github.com/spf13/viper"
+	"strings"
 	"testing"
 )
 
@@ -11,16 +12,23 @@ func TestUnmarshalKey(t *testing.T) {
 	}
 
 	Cfg = &cfg{viper.New()}
-	Cfg.SetDefault("k", map[string]string{"foo": "bar"})
+	Cfg.SetConfigType("json")
+	json := `{"foo":{"quxes":[null,{"flobs":{"b":true}}]}}`
+	if err := Cfg.Viper.ReadConfig(strings.NewReader(json)); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%v", Cfg.AllSettings())
 
-	b := new(myType)
-	err := UnmarshalKey("k", b)
-	if err != nil {
+	foo := &struct {
+		Quxes []struct {
+			Flobs map[string]bool `json:"flobs"`
+		} `json:"quxes"`
+	}{}
+
+	if err := UnmarshalKey("foo", foo); err != nil {
 		t.Error(err)
 	}
-	want := "bar"
-	got := b.Foo
-	if got != want {
-		t.Errorf("UnmarshalKey(%q) => expected %q, got %q", "k", want, got)
+	if !foo.Quxes[1].Flobs["b"] {
+		t.Errorf("expected true")
 	}
 }

@@ -1,11 +1,12 @@
 package tvdb
 
 import (
-	"github.com/bjjb/mmmgr/mock"
 	"log"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/bjjb/mmmgr/mock"
 )
 
 func init() {

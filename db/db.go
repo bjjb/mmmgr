@@ -1,2 +1,2 @@
-// db provides some abstraction for making database queries.
+// Package db provides some abstraction for making database queries.
 package db
