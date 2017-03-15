@@ -1,4 +1,5 @@
-// Package cache helps to cut down on network requests.
+// Package cache provides a pluggable rfc7234 compliant cache for HTTP
+// clients.
 package cache
 
 import (
@@ -15,26 +16,29 @@ import (
 type Cache struct {
 	http.RoundTripper
 	table map[string]*response
+	*log.Logger
 }
 
-// Fetch returns the matching, non-expired HTTP response
+// Fetch returns the matching, non-expired HTTP response; returns nil, nil if
+// it's not cached.
 func (c *Cache) Fetch(req *http.Request) (*http.Response, error) {
 	if c.table == nil {
 		c.table = make(map[string]*response)
-		log.Printf("%s MISS\n", key(req))
+		c.log("%s MISS\n", key(req))
 		return nil, nil
 	}
-	if entry := c.table[key(req)]; entry != nil {
-		log.Printf("%s HIT\n", key(req))
+	key := key(req)
+	if entry := c.table[key]; entry != nil {
+		c.log("%s HIT\n", key)
 		return deserialize(entry)
 	}
-	log.Printf("%s MISS\n", key(req))
+	c.log("%s MISS\n", key)
 	return nil, nil
 }
 
 // Store stores the HTTP response in the cache
 func (c *Cache) Store(req *http.Request, resp *http.Response) error {
-	log.Printf("%s STORING\n", key(req))
+	c.log("%s STORING\n", key(req))
 	if c.table == nil {
 		c.table = make(map[string]*response)
 	}
@@ -101,4 +105,19 @@ func deserialize(in *response) (*http.Response, error) {
 		Header:     in.Header,
 		Body:       ioutil.NopCloser(bytes.NewBuffer(in.Body)),
 	}, nil
+}
+
+func (c *Cache) logger() *log.Logger {
+	if c.Logger == nil {
+		c.Logger = log.New(ioutil.Discard, "", 0)
+	}
+	return c.Logger
+}
+
+func (c *Cache) log(fmt string, rest ...interface{}) {
+	logger := c.logger()
+	if logger == nil {
+		return
+	}
+	logger.Printf(fmt, rest)
 }

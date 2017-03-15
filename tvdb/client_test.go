@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bjjb/mmmgr/mock"
+	"github.com/bjjb/mmmgr/net/http/mock"
 )
 
 func init() {
