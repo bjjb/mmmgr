@@ -39,10 +39,8 @@ func TestReadJSON(t *testing.T) {
 	}
 }
 
-/*
-This example shows how to read in JSON to create a MockSet, to use it to match
-requests, and to have the mocks return responses with tailored content.
-*/
+// This example shows how to read in JSON to create a Set, to use it to match
+// requests, and to have the mocks return responses with tailored content.
 func Example_readingJSON() {
 	// In this example, the Reader is from a string, but it could as easily be
 	// from a file or a network stream.

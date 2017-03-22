@@ -1,6 +1,4 @@
-/*
-Package cfg provides tools for configuring mmmgr.
-*/
+// Package cfg provides tools for configuring mmmgr.
 package cfg
 
 import (

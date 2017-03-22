@@ -24,18 +24,23 @@ func init() {
 }
 
 func TestLanguages(t *testing.T) {
-	t.Run("Languages", testLanguages)
-	t.Run("SearchSeriesByName", testSearchSeriesByName)
+	c := new(Client)
+	t.Run("Languages", testLanguages(c))
+	t.Run("SearchSeriesByName", testSearchSeriesByName(c))
 }
 
-func testLanguages(t *testing.T) {
-	if _, err := DefaultClient.Languages(); err != nil {
-		t.Error(err)
+func testLanguages(c *Client) func(t *testing.T) {
+	return func(t *testing.T) {
+		if _, err := DefaultClient.Languages(); err != nil {
+			t.Error(err)
+		}
 	}
 }
 
-func testSearchSeriesByName(t *testing.T) {
-	if _, err := DefaultClient.SearchSeriesByName("Westworld"); err != nil {
-		t.Error(err)
+func testSearchSeriesByName(c *Client) func(t *testing.T) {
+	return func(t *testing.T) {
+		if _, err := DefaultClient.SearchSeriesByName("Westworld"); err != nil {
+			t.Error(err)
+		}
 	}
 }

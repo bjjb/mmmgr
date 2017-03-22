@@ -4,9 +4,7 @@ import (
 	"log"
 )
 
-/*
-An Episode encapsulates a single TVDB TV show episode.
-*/
+// An Episode encapsulates a single TVDB TV show episode.
 type Episode struct {
 	ID                 int      `json:"id"`
 	AiredSeason        int      `json:"airedSeason"`
@@ -41,9 +39,7 @@ type Episode struct {
 	SiteRatingCount    int      `json:"siteRatingCount"`
 }
 
-/*
-GetEpisodes gets the Episodes of this Series.
-*/
+// GetEpisodes gets the Episodes of this Series.
 func (s *Series) GetEpisodes() {
 	if s.Client == nil {
 		log.Fatal("series has no client")

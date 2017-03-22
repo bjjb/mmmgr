@@ -5,10 +5,8 @@ import (
 	"fmt"
 )
 
-/*
-A Series contains detailed information from The TVDB about a particular
-series.
-*/
+// A Series contains detailed information from The TVDB about a particular
+// series.
 type Series struct {
 	ID              int      `json:"id"`
 	SeriesName      string   `json:"seriesName"`
@@ -35,9 +33,7 @@ type Series struct {
 	*Client
 }
 
-/*
-GetSeries gets specific information about a particular series by the id.
-*/
+// GetSeries gets specific information about a particular series by the id.
 func (c *Client) GetSeries(id int) (*Series, error) {
 	r, err := c.Get(fmt.Sprintf("series/%d", id))
 	if err != nil {

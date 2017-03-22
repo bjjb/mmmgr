@@ -7,19 +7,15 @@ import (
 	"regexp"
 )
 
-/*
-A Request contains all the input strings against which to match a
-http.Request. It is generally compiled to a RequestMatcher which does the
-actual matching.
-*/
+// A Request contains all the input strings against which to match a
+// http.Request. It is generally compiled to a RequestMatcher which does the
+// actual matching.
 type Request struct {
 	Method, URL, Body string
 	Header            map[string]string
 }
 
-/*
-Compile builds a RequestMatcher for the given Request.
-*/
+// Compile builds a RequestMatcher for the given Request.
 func (r *Request) Compile() (*RequestMatcher, error) {
 	var method, url, body, k, v *regexp.Regexp
 	var err error
@@ -51,12 +47,10 @@ func (r *Request) Compile() (*RequestMatcher, error) {
 	return nil, err
 }
 
-/*
-ParseRequest Makes a Request from a http.Request. This simplifies matching and
-printing the http.Request's values without worrying about reading the body or
-parsing the URL or headers. The http.Request's Body will be read at this
-point.
-*/
+// ParseRequest Makes a Request from a http.Request. This simplifies matching
+// and printing the http.Request's values without worrying about reading the
+// body or parsing the URL or headers. The http.Request's Body will be read at
+// this point.
 func ParseRequest(hr *http.Request) (*Request, error) {
 	r := &Request{"", "", "", make(map[string]string)}
 	r.Method = hr.Method
@@ -78,9 +72,7 @@ func ParseRequest(hr *http.Request) (*Request, error) {
 	return r, nil
 }
 
-/*
-String implements the Stringer interface for a Request.
-*/
+// String implements the Stringer interface for a Request.
 func (r *Request) String() string {
 	trim := func(s string, max int, suffix string) string {
 		count := 0

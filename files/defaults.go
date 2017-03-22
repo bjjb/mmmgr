@@ -1,8 +1,6 @@
 package files
 
-/*
-DefaultPatterns is the default master map of media patterns.
-*/
+// DefaultPatterns is the default master map of media patterns.
 var DefaultPatterns = map[string][]string{
 	"tv": []string{
 		`%show%\.S%season%E%episode%(?:\.%title%)?\.%source%\.%vcodec%-%rgroup%`,
@@ -19,10 +17,8 @@ var DefaultPatterns = map[string][]string{
 	"book": []string{},
 }
 
-/*
-DefaultReplacements is a map of regular expression snippets which can be used
-to abbreviate or specify filename patterns.
-*/
+// DefaultReplacements is a map of regular expression snippets which can be
+// used to abbreviate or specify filename patterns.
 var DefaultReplacements = map[string]string{
 	"album":   `[^/]+`,
 	"artist":  `[^/]+`,

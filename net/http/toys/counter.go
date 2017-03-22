@@ -11,7 +11,8 @@ import (
 // A Counter is an incrementing RountTripper.
 type Counter byte
 
-// RoundTrip always gives a new response and a nil error
+// RoundTrip always gives a new response and a nil error. It's not safe for
+// concurrent use.
 func (rt *Counter) RoundTrip(req *http.Request) (*http.Response, error) {
 	v := byte(*rt)
 	resp := &http.Response{

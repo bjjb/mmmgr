@@ -9,53 +9,29 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"strings"
 
 	"github.com/bjjb/mmmgr/cfg"
 )
 
-/*
-Endpoint is the location of the TVDB API
-*/
-var Endpoint = "https://api.thetvdb.com"
+const (
+	// Endpoint is the location of the TVDB API
+	Endpoint = "https://api.thetvdb.com"
+	// Version is the content-type of the API, which includes the version number
+	Version = "application/vnd.thetvdb.v2"
+)
 
-/*
-Version is the content-type of the API, which includes the version number.
-*/
-var Version = "application/vnd.thetvdb.v2"
-
-/*
-TokenHoursToLive is the number of hours for which a JWT token is expected to
-remain valid.
-*/
-var TokenHoursToLive = 4.0
-
-/*
-DefaultClient is a convenient Client, configured (in init()) using user's
-configuration values, which is used in the Command and in tests.
-*/
+// DefaultClient is a convenient Client, configured (in init()) using user's
+// configuration values, which is used in the Command and in tests.
 var DefaultClient = new(Client)
 
-/*
-TokenFile is used to store the Client's login token
-*/
-var TokenFile string
-
-/*
-Debug is used for logging.
-*/
+// Debug is used for logging.
 var Debug = func(fmt string, rest ...interface{}) {}
 
-/*
-httpClient is the underlying HTTP Client for sending requests to The TVDB.
-Replace this if you want to mock requests.
-*/
+// httpClient is the underlying HTTP Client for sending requests to The TVDB.
+// Replace this if you want to mock requests.
 var httpClient = http.DefaultClient
 
-/*
-A Client exposes methods talk to TheTVDB JSON API securely.
-*/
+// A Client exposes methods talk to TheTVDB JSON API securely.
 type Client struct {
 	APIKey           string `json:"apikey"`
 	UserName         string `json:"username"`
@@ -63,10 +39,8 @@ type Client struct {
 	token, tokenFile string
 }
 
-/*
-login logs the *Client c into TheTVDB using its credentials which were
-supplied to NewClient. You probably won't need to call this yourself.
-*/
+// login logs the *Client c into TheTVDB using its credentials which were
+// supplied to NewClient. You probably won't need to call this yourself.
 func (c *Client) login() error {
 	body := map[string]string{
 		"apikey":   c.APIKey,
@@ -86,10 +60,6 @@ func (c *Client) login() error {
 	return c.doTokenRequest(req)
 }
 
-/*
-refreshToken updates the token of *Client c. It must already have a token, and
-its token must be valid.
-*/
 func (c *Client) refreshToken() error {
 	values := &url.Values{"token": {c.token}}
 	url := Endpoint + "/refresh_token?" + values.Encode()
@@ -102,11 +72,6 @@ func (c *Client) refreshToken() error {
 	return c.doTokenRequest(req)
 }
 
-/*
-doTokenRequest is used by login and refreshToken to send the preconfigured
-request, parse the response, and either set the *Client's token and
-loggedInAt, or return the appropriate error.
-*/
 func (c *Client) doTokenRequest(req *http.Request) error {
 	Debug("doTokenRequest(%v)", req)
 	resp, err := httpClient.Do(req)
@@ -126,56 +91,18 @@ func (c *Client) doTokenRequest(req *http.Request) error {
 		return err
 	}
 	c.token = result["token"]
-	_ = c.saveToken(TokenFile)
 	return nil
 }
 
-/*
-authorize checks the *Client c for a token and does nothing if it is found and
-valid; otherwise it refreshes a token which is about to expire, or tries to
-log in if the token is expired or blank.
-*/
 func (c *Client) authorize() error {
-	if err := c.loadToken(TokenFile); err != nil {
-		switch err.(type) {
-		case *os.PathError:
-			c.token = ""
-		default:
-			log.Fatalf("%T: %[1]v", err)
-		}
-	}
 	if c.token == "" {
 		return c.login()
 	}
 	return nil
 }
 
-func (c *Client) loadToken(file string) error {
-	if file == "" {
-		return nil
-	}
-	token, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	c.token = strings.TrimSpace(string(token))
-	return nil
-}
-
-func (c *Client) saveToken(file string) error {
-	if file == "" {
-		return nil
-	}
-	if err := ioutil.WriteFile(file, []byte(c.token), 0644); err != nil {
-		return err
-	}
-	return nil
-}
-
-/*
-Get authorizes the client (if needed), GETS from the URL, and returns the
-body, or an error.
-*/
+// Get authorizes the client (if needed), GETS from the URL, and returns the
+// body, or an error.
 func (c *Client) Get(url string) (io.Reader, error) {
 	if err := c.authorize(); err != nil {
 		return nil, err
@@ -206,9 +133,7 @@ func (c *Client) Get(url string) (io.Reader, error) {
 	return bytes.NewBuffer(body), nil
 }
 
-/*
-Languages gets a list of the *Languages supported by TheTVDB.
-*/
+// Languages gets a list of the *Languages supported by TheTVDB.
 func (c *Client) Languages() ([]Language, error) {
 	r, err := c.Get("languages")
 	if err != nil {
@@ -229,9 +154,7 @@ func init() {
 	}
 }
 
-/*
-A SeriesSearchResult is returned (in slices) by the SearchSeries* methods.
-*/
+// A SeriesSearchResult is returned (in slices) by the SearchSeries* methods.
 type SeriesSearchResult struct {
 	Aliases    []string `json:"aliases"`
 	Banner     string   `json:"banner"`
@@ -243,31 +166,24 @@ type SeriesSearchResult struct {
 	Status     string   `json:"status"`
 }
 
-/*
-SearchSeriesByName queries The TVDB for series matching the given name.
-*/
+// SearchSeriesByName queries The TVDB for series matching the given name.
 func (c *Client) SearchSeriesByName(name string) ([]SeriesSearchResult, error) {
 	return c.SearchSeries(&url.Values{"name": {name}})
 }
 
-/*
-SearchSeriesByImdbID queries The TVDB for series matching the given IMDB ID.
-*/
+// SearchSeriesByImdbID queries The TVDB for series matching the given IMDB
+// ID.
 func (c *Client) SearchSeriesByImdbID(id string) ([]SeriesSearchResult, error) {
 	return c.SearchSeries(&url.Values{"imdbId": {id}})
 }
 
-/*
-SearchSeriesByZap2itID queries The TVDB for series matching the given Zap2It
-ID.
-*/
+// SearchSeriesByZap2itID queries The TVDB for series matching the given
+// Zap2It ID.
 func (c *Client) SearchSeriesByZap2itID(id string) ([]SeriesSearchResult, error) {
 	return c.SearchSeries(&url.Values{"zap2itId": {id}})
 }
 
-/*
-SearchSeries queries The TVDB for series matching the given url.Values.
-*/
+// SearchSeries queries The TVDB for series matching the given url.Values.
 func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) {
 	r, err := c.Get("search/series?" + values.Encode())
 	if err != nil {
@@ -282,9 +198,7 @@ func (c *Client) SearchSeries(values *url.Values) ([]SeriesSearchResult, error) 
 	return result.Data, nil
 }
 
-/*
-SearchSeriesParams gets a list of the params applicable for SearchSeries.
-*/
+// SearchSeriesParams gets a list of the params applicable for SearchSeries.
 func (c *Client) SearchSeriesParams() ([]string, error) {
 	r, err := c.Get("search/series/params")
 	if err != nil {

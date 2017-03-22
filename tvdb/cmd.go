@@ -28,9 +28,7 @@ func init() {
 	cmd.AddCommand(rootCommand)
 }
 
-/*
-command is a cobra.Command which is to be added to the root command.
-*/
+// command is a cobra.Command which is to be added to the root command.
 var rootCommand = &cobra.Command{
 	Use:   "tvdb",
 	Short: "interact with the TVDB",
@@ -44,9 +42,7 @@ A basic client for working with The TVDB (https://thetvdb.com).
 	},
 }
 
-/*
-languagesCommand GETs /languages.
-*/
+// languagesCommand GETs /languages.
 var languagesCommand = &cobra.Command{
 	Use:   "languages",
 	Short: "list supported languages",
@@ -60,9 +56,7 @@ var languagesCommand = &cobra.Command{
 	},
 }
 
-/*
-searchCommand searches for a series.
-*/
+// searchCommand searches for a series.
 var searchCommand = &cobra.Command{
 	Use:   "search",
 	Short: "search for things",
@@ -109,9 +103,7 @@ var searchCommand = &cobra.Command{
 	},
 }
 
-/*
-seriesCommand searches for a series.
-*/
+// seriesCommand searches for a series.
 var seriesCommand = &cobra.Command{
 	Use:   "series ID",
 	Short: "get series information",
@@ -135,9 +127,7 @@ var seriesCommand = &cobra.Command{
 	},
 }
 
-/*
-outputJSON simply encodes the data to JSON and prints it to STDOUT.
-*/
+// outputJSON simply encodes the data to JSON and prints it to STDOUT
 func outputJSON(data interface{}) {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", jsonIndentation)
@@ -147,19 +137,15 @@ func outputJSON(data interface{}) {
 	}
 }
 
-/*
-usage is a utility method for printing a command and panicking if it fails.
-*/
+// usage is a utility method for printing a command and panicking if it fails
 func usage(cmd *cobra.Command) {
 	if err := cmd.Usage(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-/*
-getString is a utility method for getting a string from a command's persistent
-flags, and panicking if it fails.
-*/
+// getString is a utility method for getting a string from a command's
+// persistent flags, and panicking if it fails.
 func getString(cmd *cobra.Command, f string) string {
 	s, err := cmd.PersistentFlags().GetString(f)
 	if err != nil {
@@ -168,10 +154,8 @@ func getString(cmd *cobra.Command, f string) string {
 	return s
 }
 
-/*
-getBool is a utility method for getting a boolean from a command's persistent
-flags, and panicking if it fails.
-*/
+// getBool is a utility method for getting a boolean from a command's
+// persistent flags, and panicking if it fails.
 func getBool(cmd *cobra.Command, f string) bool {
 	b, err := cmd.PersistentFlags().GetBool(f)
 	if err != nil {
@@ -180,11 +164,9 @@ func getBool(cmd *cobra.Command, f string) bool {
 	return b
 }
 
-/*
-getValues is a utility method to extract a series of String flags from the
-commands's persistent flags, and (if they're not empty) add them to a
-url.Values.
-*/
+// getValues is a utility method to extract a series of String flags from the
+// commands's persistent flags, and (if they're not empty) add them to a
+// url.Values.
 func getValues(cmd *cobra.Command, flags ...string) *url.Values {
 	values := &url.Values{}
 	for _, k := range flags {

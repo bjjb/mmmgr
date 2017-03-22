@@ -11,19 +11,15 @@ import (
 	"time"
 )
 
-/*
-A Response is a set of templates used to respond to matching Requests.
-*/
+// A Response is a set of templates used to respond to matching Requests.
 type Response struct {
 	StatusCode   int
 	Status, Body string
 	Header       map[string]string
 }
 
-/*
-Compile expects a Match, which it uses to execute the Templates in the
-Response to populate a *http.Response.
-*/
+// Compile expects a Match, which it uses to execute the Templates in the
+// Response to populate a *http.Response.
 func (r *Response) Compile(m Match) (*http.Response, error) {
 	hr := &http.Response{}
 	s, err := renderInt(r.StatusCode, m)
@@ -61,9 +57,7 @@ func (r *Response) Compile(m Match) (*http.Response, error) {
 	return hr, nil
 }
 
-/*
-String implements the Stringer interface for a Response.
-*/
+// String implements the Stringer interface for a Response.
 func (r *Response) String() string {
 	return fmt.Sprintf(
 		"%T@%[1]p{%d,%s,%q,%v}",
@@ -75,10 +69,8 @@ func (r *Response) String() string {
 	)
 }
 
-/*
-renderString executes the Template with the given Match, and returns the
-resulting string, or an error.
-*/
+// renderString executes the Template with the given Match, and returns the
+// resulting string, or an error.
 func renderString(t string, m Match) (string, error) {
 	templ, err := template.New(fmt.Sprintf("%x", time.Now().UnixNano())).Parse(t)
 	if err != nil {
@@ -92,9 +84,7 @@ func renderString(t string, m Match) (string, error) {
 	return string(b.Bytes()), nil
 }
 
-/*
-renderInt converts i to a String and calls renderString.
-*/
+// renderInt converts i to a String and calls renderString.
 func renderInt(i int, m Match) (string, error) {
 	return renderString(strconv.Itoa(i), m)
 }

@@ -15,13 +15,24 @@ import (
 // A Cache is a concurrency-safe HTTP client cache
 type Cache struct {
 	http.RoundTripper
-	table map[string]*response
 	*log.Logger
+	table         map[string]*response
+	skipRequests  []skipRequest
+	skipResponses []skipResponse
+}
+
+// A Store implements methods to store and retrieve a *http.Response by a key.
+type Store interface {
+	Fetch(*http.Request) *http.Response
+	Put(*http.Request, *http.Response)
 }
 
 // Fetch returns the matching, non-expired HTTP response; returns nil, nil if
 // it's not cached.
 func (c *Cache) Fetch(req *http.Request) (*http.Response, error) {
+	if c.skipRequest(req) {
+		return nil, nil
+	}
 	if c.table == nil {
 		c.table = make(map[string]*response)
 		c.log("%s MISS\n", key(req))
@@ -38,6 +49,9 @@ func (c *Cache) Fetch(req *http.Request) (*http.Response, error) {
 
 // Store stores the HTTP response in the cache
 func (c *Cache) Store(req *http.Request, resp *http.Response) error {
+	if c.skipResponse(req, resp) {
+		return nil
+	}
 	c.log("%s STORING\n", key(req))
 	if c.table == nil {
 		c.table = make(map[string]*response)
@@ -121,3 +135,36 @@ func (c *Cache) log(fmt string, rest ...interface{}) {
 	}
 	logger.Printf(fmt, rest)
 }
+
+type skipRequest func(*http.Request) bool
+type skipResponse func(*http.Request, *http.Response) bool
+
+func (c *Cache) skipRequest(req *http.Request) bool {
+	for _, f := range c.skipRequests {
+		if f(req) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Cache) skipResponse(req *http.Request, resp *http.Response) bool {
+	if c.skipRequest(req) {
+		return true
+	}
+	for _, f := range c.skipResponses {
+		if f(req, resp) {
+			return true
+		}
+	}
+	return false
+}
+
+func requestNotUnderstood(req *http.Request) bool { return false }
+
+func foo() skipRequest {
+	return requestNotUnderstood
+}
+
+var skipRequests = []skipRequest{foo()}
+var skipResponses = []skipResponse{}

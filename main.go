@@ -1,7 +1,5 @@
-/*
-Package main contains the main entry function for mmmgr. The CLI is based on
-http://github.com/spf13/cobra.
-*/
+// Package main contains the main entry function for mmmgr. The CLI is based on
+// http://github.com/spf13/cobra.
 package main
 
 import (
