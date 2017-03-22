@@ -134,13 +134,13 @@ func (c *Client) Get(url string) (io.Reader, error) {
 }
 
 // Languages gets a list of the *Languages supported by TheTVDB.
-func (c *Client) Languages() ([]Language, error) {
+func (c *Client) Languages() ([]*Language, error) {
 	r, err := c.Get("languages")
 	if err != nil {
 		return nil, err
 	}
 	result := new(struct {
-		Data []Language `json:"data"`
+		Data []*Language `json:"data"`
 	})
 	if err := json.NewDecoder(r).Decode(&result); err != nil {
 		return nil, err

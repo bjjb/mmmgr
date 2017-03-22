@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/bjjb/mmmgr/cmd"
 	"github.com/spf13/cobra"
@@ -14,15 +15,41 @@ import (
 
 var jsonIndentation = "  "
 
+var options = struct {
+	search struct {
+		params           bool
+		imdbID, zap2itID string
+	}
+	json, trace bool
+	template    string
+}{}
+
+var templates = map[string]string{
+	"languages": `
+{{if headers -}} {{printf "%-8s %-4s %s" "ID" "Code" "Name"}} {{- end}}
+{{range . -}}
+{{printf "%-8d %-4s %s" .ID .Abbr .Name}}
+{{end}}`,
+	"search": `
+{{if headers -}} {{printf "%-8s %-10s %s" "ID" "Date" "Name"}} {{- end}}
+{{range . -}}{{printf "%-8d %-10s %s" .ID .FirstAired .Name}}
+{{end}}`,
+}
+
 func init() {
-	searchCommand.PersistentFlags().BoolP(
-		"params", "P", false, "list valid search params")
-	searchCommand.PersistentFlags().StringP(
-		"name", "n", "", "search by name (default no flags given)")
-	searchCommand.PersistentFlags().String(
-		"imdbId", "", "search by IMDB ID")
-	searchCommand.PersistentFlags().String(
-		"zap2itId", "", "search by Zap2It ID")
+	searchCommand.PersistentFlags().BoolVarP(
+		&options.search.params, "params", "P", false,
+		"list valid search params")
+	searchCommand.PersistentFlags().StringVar(
+		&options.search.imdbID, "imdbId", "", "search by IMDB ID")
+	searchCommand.PersistentFlags().StringVar(
+		&options.search.zap2itID, "zap2itId", "", "search by Zap2It ID")
+	rootCommand.PersistentFlags().BoolVarP(
+		&options.json, "json", "J", false, "output JSON")
+	rootCommand.PersistentFlags().StringVarP(
+		&options.template, "template", "T", "", "use a custom output template")
+	rootCommand.PersistentFlags().BoolVar(
+		&options.trace, "trace", false, "trace execution")
 	rootCommand.AddCommand(languagesCommand, searchCommand, seriesCommand)
 
 	cmd.AddCommand(rootCommand)
@@ -42,7 +69,6 @@ A basic client for working with The TVDB (https://thetvdb.com).
 	},
 }
 
-// languagesCommand GETs /languages.
 var languagesCommand = &cobra.Command{
 	Use:   "languages",
 	Short: "list supported languages",
@@ -52,19 +78,17 @@ var languagesCommand = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		outputJSON(languages)
+		output(cmd, "languages", languages)
 	},
 }
 
 // searchCommand searches for a series.
 var searchCommand = &cobra.Command{
-	Use:   "search",
+	Use:   "search TERM",
 	Short: "search for things",
 	Long:  "search for series on The TVDB",
 	Run: func(cmd *cobra.Command, args []string) {
-		params := getBool(cmd, "params")
-
-		if params {
+		if options.search.params {
 			if len(args) > 0 {
 				usage(cmd)
 				return
@@ -73,33 +97,35 @@ var searchCommand = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			outputJSON(result)
+			output(cmd, "search", result)
 			return
 		}
 
-		values := getValues(cmd, "name", "imdbId", "zap2itId")
-		if strings.Contains(values.Encode(), "&") {
-			log.Fatal("--name, --imdbId and --zap2itId are mutually exclusive")
-			return
-		} else if values.Encode() == "" {
-			if len(args) == 0 {
-				usage(cmd)
-				return
+		values := &url.Values{}
+		if options.search.imdbID == "" {
+			if options.search.zap2itID == "" {
+				values.Set("name", strings.Join(args, " "))
+			} else {
+				if len(args) != 1 {
+					usage(cmd)
+					return
+				}
+				values.Set("zap2itId", args[0])
 			}
-			values.Set("name", strings.Join(args, " "))
 		} else {
-			if len(args) > 0 {
+			if len(args) != 1 {
 				usage(cmd)
 				return
 			}
+			values.Set("imdbId", args[0])
 		}
-
 		result, err := DefaultClient.SearchSeries(values)
 		if err != nil {
 			log.Fatal(err)
 			return
 		}
-		outputJSON(result)
+		output(cmd, "search", result)
+
 	},
 }
 
@@ -123,11 +149,31 @@ var seriesCommand = &cobra.Command{
 			log.Fatal(err)
 			return
 		}
-		outputJSON(result)
+		output(cmd, "series", result)
 	},
 }
 
-// outputJSON simply encodes the data to JSON and prints it to STDOUT
+var templateFuncs = template.FuncMap{
+	"headers": func() (bool, error) { return true, nil },
+}
+
+func output(cmd *cobra.Command, t string, data interface{}) {
+	if options.json {
+		outputJSON(data)
+	}
+	text := options.template
+	if options.template == "" {
+		text = templates[t]
+	}
+	templ, err := template.New(t).Funcs(templateFuncs).Parse(text)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := templ.Execute(os.Stdout, data); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func outputJSON(data interface{}) {
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", jsonIndentation)
@@ -137,43 +183,8 @@ func outputJSON(data interface{}) {
 	}
 }
 
-// usage is a utility method for printing a command and panicking if it fails
 func usage(cmd *cobra.Command) {
 	if err := cmd.Usage(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// getString is a utility method for getting a string from a command's
-// persistent flags, and panicking if it fails.
-func getString(cmd *cobra.Command, f string) string {
-	s, err := cmd.PersistentFlags().GetString(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return s
-}
-
-// getBool is a utility method for getting a boolean from a command's
-// persistent flags, and panicking if it fails.
-func getBool(cmd *cobra.Command, f string) bool {
-	b, err := cmd.PersistentFlags().GetBool(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return b
-}
-
-// getValues is a utility method to extract a series of String flags from the
-// commands's persistent flags, and (if they're not empty) add them to a
-// url.Values.
-func getValues(cmd *cobra.Command, flags ...string) *url.Values {
-	values := &url.Values{}
-	for _, k := range flags {
-		v := getString(cmd, k)
-		if v != "" {
-			values.Set(k, v)
-		}
-	}
-	return values
 }
